@@ -48,6 +48,7 @@ class AppConfig:
     tick_interval_sec: float = 1.0
     bars_timeframe: str = "1Min"
     log_dir: str = "logs"
+    discord_webhook_url: str = ""
     risk: RiskConfig = field(default_factory=RiskConfig)
     session: SessionConfig = field(default_factory=SessionConfig)
     strategies: StrategyToggles = field(default_factory=StrategyToggles)
@@ -154,6 +155,7 @@ def load_config(args: argparse.Namespace) -> AppConfig:
         tick_interval_sec=tick_interval_sec,
         bars_timeframe=env_default("BARS_TIMEFRAME", "1Min"),
         log_dir=env_default("LOG_DIR", "logs"),
+        discord_webhook_url=env_default("DISCORD_WEBHOOK_URL", ""),
         risk=RiskConfig(
             max_gross_exposure_usd=float(env_default("MAX_GROSS_EXPOSURE_USD", "25000")),
             max_net_exposure_usd=float(env_default("MAX_NET_EXPOSURE_USD", "10000")),

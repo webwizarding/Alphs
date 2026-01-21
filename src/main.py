@@ -16,6 +16,7 @@ from .broker import Broker
 from .execution import ExecutionEngine, OrderIntent
 from .risk import RiskManager, PositionState
 from .metrics import Metrics
+from .utils.alerts import DiscordAlerter
 from .strategies.pairs_stat_arb import PairsStatArb
 from .strategies.avellaneda_stoikov_mm import AvellanedaStoikovMM
 from .strategies.lead_lag_arb import LeadLagArb
@@ -35,6 +36,7 @@ async def run_trader(args: argparse.Namespace) -> None:
     execution = ExecutionEngine(broker, max_open_orders=cfg.risk.max_open_orders)
     risk = RiskManager(cfg.risk.max_gross_exposure_usd, cfg.risk.max_net_exposure_usd, cfg.risk.max_order_notional_usd, cfg.risk.max_position_notional_usd, cfg.risk.daily_loss_limit_usd)
     metrics = Metrics(cfg.log_dir)
+    alerter = DiscordAlerter(cfg.discord_webhook_url)
     news_stream = None
 
     positions: Dict[str, PositionState] = {}
@@ -74,6 +76,7 @@ async def run_trader(args: argparse.Namespace) -> None:
             reject_counts[strategy] = reject_counts.get(strategy, 0) + 1
             if reject_counts[strategy] >= 5:
                 disabled_strats.add(strategy)
+                await alerter.send("strategy_disabled", f"{strategy} disabled after repeated rejects")
         if event in {"fill", "partial_fill"}:
             symbol = order.get("symbol")
             side = order.get("side")
@@ -135,6 +138,7 @@ async def run_trader(args: argparse.Namespace) -> None:
             intents.extend(strat.on_tick(data_stream, positions))
         intents = risk.check(intents, positions, data_stream)
         if risk.kill_switch:
+            await alerter.send("kill_switch", "daily loss limit reached, flattening positions")
             await flatten_all()
             return
         await execution.sync(intents)
@@ -153,6 +157,7 @@ async def run_trader(args: argparse.Namespace) -> None:
 
     await data_stream.start()
     await trade_stream.start()
+    await alerter.send("startup", "trader started")
     if news_strategy:
         try:
             from alpaca.data.live import NewsDataStream
@@ -169,6 +174,7 @@ async def run_trader(args: argparse.Namespace) -> None:
             asyncio.create_task(news_stream.run())
         except Exception:
             metrics.log_event("news_stream", {"status": "unavailable"})
+            await alerter.send("news_stream", "news stream unavailable")
 
     scheduler = AsyncScheduler(cfg.tick_interval_sec)
     loop = asyncio.get_running_loop()
@@ -187,6 +193,7 @@ async def run_trader(args: argparse.Namespace) -> None:
     if cfg.session.cancel_all_on_shutdown:
         await broker.cancel_all()
     await flatten_all()
+    await alerter.send("shutdown", "trader stopped")
     await trade_stream.stop()
     await data_stream.stop()
     if news_stream:

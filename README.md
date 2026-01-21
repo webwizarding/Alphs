@@ -24,6 +24,7 @@ cp .env.example .env
 ```
 
 Edit `.env` with your Alpaca paper credentials and preferred symbols/limits.
+Set `DISCORD_WEBHOOK_URL` to enable Discord alerts.
 
 ## Run
 
@@ -54,6 +55,20 @@ Systemd example:
 
 `scripts/systemd/alpaca_hft_paper.service`
 
+Service commands:
+
+```bash
+sudo cp scripts/systemd/alpaca_hft_paper.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable alpaca_hft_paper.service
+sudo systemctl start alpaca_hft_paper.service
+sudo systemctl stop alpaca_hft_paper.service
+sudo systemctl restart alpaca_hft_paper.service
+sudo systemctl disable alpaca_hft_paper.service
+sudo rm /etc/systemd/system/alpaca_hft_paper.service
+sudo systemctl daemon-reload
+```
+
 ## Strategies
 
 - pairs: short-term statistical arbitrage
@@ -67,6 +82,7 @@ Systemd example:
 
 - JSONL events: `logs/events.jsonl`
 - CSV summary: `logs/daily_summary.csv`
+- Discord alerts: startup, shutdown, kill switch, strategy disable, news stream unavailable
 
 ## Safety / Reality check
 
