@@ -12,7 +12,7 @@ python3.12 -m venv .venv
 pip install -U pip
 pip install -e .
 cp .env.example .env
-python -m src.main run --strategies pairs,mm,leadlag --symbols "SPY,QQQ,AAPL,MSFT,NVDA"
+python -m src.main run --strategies pairs,mm,leadlag
 ```
 
 Optional uvloop:
@@ -24,6 +24,7 @@ pip install -e ".[uvloop]"
 ## Configure
 
 Edit `.env` with your Alpaca paper credentials and preferred symbols/limits before running.
+Run commands use symbols from `.env` by default.
 Set `DISCORD_WEBHOOK_URL` to enable Discord alerts.
 
 Status:
@@ -61,6 +62,20 @@ sudo systemctl disable alpaca_hft_paper.service
 sudo rm /etc/systemd/system/alpaca_hft_paper.service
 sudo systemctl daemon-reload
 ```
+
+Market-hours timers (start at 09:25 ET, stop at 16:05 ET):
+
+```bash
+sudo cp scripts/systemd/alpaca_hft_paper_start.service /etc/systemd/system/
+sudo cp scripts/systemd/alpaca_hft_paper_stop.service /etc/systemd/system/
+sudo cp scripts/systemd/alpaca_hft_paper_start.timer /etc/systemd/system/
+sudo cp scripts/systemd/alpaca_hft_paper_stop.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now alpaca_hft_paper_start.timer
+sudo systemctl enable --now alpaca_hft_paper_stop.timer
+```
+
+Note: The app already respects `TRADE_ONLY_REGULAR_HOURS=true` and will idle outside market hours even if the service stays running.
 
 ## Strategies
 

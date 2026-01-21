@@ -1,0 +1,6 @@
+[Unit]
+Description=Start Alpaca HFT Paper Trader
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl start alpaca_hft_paper.service

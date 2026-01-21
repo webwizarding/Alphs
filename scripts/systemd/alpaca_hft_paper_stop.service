@@ -1,0 +1,6 @@
+[Unit]
+Description=Stop Alpaca HFT Paper Trader
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl stop alpaca_hft_paper.service
