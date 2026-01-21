@@ -87,7 +87,7 @@ class MarketDataStream:
         backoff = 1.0
         while self._running:
             try:
-                await self._stream.run()
+                await asyncio.to_thread(self._stream.run)
                 backoff = 1.0
             except Exception:
                 await asyncio.sleep(backoff)

@@ -171,7 +171,7 @@ async def run_trader(args: argparse.Namespace) -> None:
                     news_strategy.on_news(symbol, headline)
 
             news_stream.subscribe_news(_on_news, *cfg.symbols)
-            asyncio.create_task(news_stream.run())
+            asyncio.create_task(asyncio.to_thread(news_stream.run))
         except Exception:
             metrics.log_event("news_stream", {"status": "unavailable"})
             await alerter.send("news_stream", "news stream unavailable")
