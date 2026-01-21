@@ -14,6 +14,7 @@ Step 2: Create and activate a virtual environment
 ```bash
 python3.12 -m venv .venv
 . ./.venv/bin/activate
+set -a; . ./.env; set +a
 ```
 
 Step 3: Install dependencies

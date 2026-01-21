@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/alpaca-hft-paper
-EnvironmentFile=/opt/alpaca-hft-paper/.env
-ExecStart=/opt/alpaca-hft-paper/.venv/bin/python -m src.main run --strategies pairs,mm,leadlag
+WorkingDirectory=/home/Alphs
+EnvironmentFile=/home/Alphs/.env
+ExecStart=/home/Alphs/.venv/bin/python -m src.main run --strategies pairs,mm,leadlag
 Restart=always
 RestartSec=5
 
