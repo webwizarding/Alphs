@@ -2,7 +2,7 @@
 
 Forward-test multiple HFT-style strategy families on Alpaca paper trading using IEX data. Designed for a modest VPS with conservative defaults.
 
-## Install and run (Ubuntu 24.04)
+## First-time setup on a VPS (Ubuntu 24.04)
 
 ```bash
 sudo apt update
@@ -15,6 +15,9 @@ cp .env.example .env
 python -m src.main run --strategies pairs,mm,leadlag
 ```
 
+Edit `.env` with your Alpaca paper credentials and preferred symbols/limits before running.
+Run commands use symbols from `.env` by default.
+
 Optional uvloop:
 
 ```bash
@@ -23,8 +26,6 @@ pip install -e ".[uvloop]"
 
 ## Configure
 
-Edit `.env` with your Alpaca paper credentials and preferred symbols/limits before running.
-Run commands use symbols from `.env` by default.
 Set `DISCORD_WEBHOOK_URL` to enable Discord alerts.
 
 Status:
@@ -49,7 +50,28 @@ Systemd example:
 
 `scripts/systemd/alpaca_hft_paper.service`
 
-Service commands:
+Create and start the service (runs without your SSH session)
+
+```bash
+sudo cp scripts/systemd/alpaca_hft_paper.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable alpaca_hft_paper.service
+sudo systemctl start alpaca_hft_paper.service
+```
+
+Check service status:
+
+```bash
+sudo systemctl status alpaca_hft_paper.service
+```
+
+View logs:
+
+```bash
+sudo journalctl -u alpaca_hft_paper.service -f
+```
+
+Manage service:
 
 ```bash
 sudo cp scripts/systemd/alpaca_hft_paper.service /etc/systemd/system/
