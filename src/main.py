@@ -30,9 +30,9 @@ from .utils.time import now_eastern, is_regular_hours, seconds_to_close
 async def run_trader(args: argparse.Namespace) -> None:
     cfg = load_config(args)
 
-    broker = Broker(cfg.api_key_id, cfg.api_secret_key, cfg.paper_rest, max_per_min=cfg.risk.max_trades_per_min)
+    broker = Broker(cfg.api_key_id, cfg.api_secret_key, max_per_min=cfg.risk.max_trades_per_min)
     data_stream = MarketDataStream(cfg.api_key_id, cfg.api_secret_key, cfg.symbols, feed=cfg.feed)
-    trade_stream = TradeStream(cfg.api_key_id, cfg.api_secret_key, cfg.paper_rest)
+    trade_stream = TradeStream(cfg.api_key_id, cfg.api_secret_key)
     execution = ExecutionEngine(broker, max_open_orders=cfg.risk.max_open_orders)
     risk = RiskManager(cfg.risk.max_gross_exposure_usd, cfg.risk.max_net_exposure_usd, cfg.risk.max_order_notional_usd, cfg.risk.max_position_notional_usd, cfg.risk.daily_loss_limit_usd)
     metrics = Metrics(cfg.log_dir)
@@ -203,7 +203,7 @@ async def run_trader(args: argparse.Namespace) -> None:
 
 async def status_cmd(args: argparse.Namespace) -> None:
     cfg = load_config(args)
-    broker = Broker(cfg.api_key_id, cfg.api_secret_key, cfg.paper_rest, max_per_min=cfg.risk.max_trades_per_min)
+    broker = Broker(cfg.api_key_id, cfg.api_secret_key, max_per_min=cfg.risk.max_trades_per_min)
     acct = await broker.get_account()
     positions = await broker.list_positions()
     print(f"equity={acct.equity} cash={acct.cash} buying_power={acct.buying_power}")
@@ -213,7 +213,7 @@ async def status_cmd(args: argparse.Namespace) -> None:
 
 async def flatten_cmd(args: argparse.Namespace) -> None:
     cfg = load_config(args)
-    broker = Broker(cfg.api_key_id, cfg.api_secret_key, cfg.paper_rest, max_per_min=cfg.risk.max_trades_per_min)
+    broker = Broker(cfg.api_key_id, cfg.api_secret_key, max_per_min=cfg.risk.max_trades_per_min)
     positions = await broker.list_positions()
     for p in positions:
         qty = abs(float(p.qty))

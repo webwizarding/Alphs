@@ -10,8 +10,8 @@ from .utils.rate_limit import TokenBucket
 
 
 class Broker:
-    def __init__(self, api_key: str, api_secret: str, base_url: str, max_per_min: int = 60):
-        self.client = TradingClient(api_key, api_secret, paper=True, base_url=base_url)
+    def __init__(self, api_key: str, api_secret: str, max_per_min: int = 60):
+        self.client = TradingClient(api_key, api_secret, paper=True)
         rate_per_sec = max_per_min / 60.0
         self._bucket = TokenBucket(rate_per_sec=rate_per_sec, capacity=max_per_min)
 

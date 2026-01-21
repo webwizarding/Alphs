@@ -6,11 +6,10 @@ from alpaca.trading.stream import TradingStream
 
 
 class TradeStream:
-    def __init__(self, api_key: str, api_secret: str, base_url: str):
+    def __init__(self, api_key: str, api_secret: str):
         self.api_key = api_key
         self.api_secret = api_secret
-        self.base_url = base_url
-        self._stream = TradingStream(api_key, api_secret, paper=True, base_url=base_url)
+        self._stream = TradingStream(api_key, api_secret, paper=True)
         self._task: Optional[asyncio.Task] = None
         self._running = False
         self._handlers: List[Callable[[dict], Awaitable[None]]] = []
