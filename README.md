@@ -4,19 +4,70 @@ Forward-test multiple HFT-style strategy families on Alpaca paper trading using 
 
 ## First-time setup on a VPS (Ubuntu 24.04)
 
+Step 1: Install prerequisites
+
 ```bash
 sudo apt update
 sudo apt install -y python3.12 python3.12-venv python3-pip
+```
+
+Step 2: Create and activate a virtual environment
+
+```bash
 python3.12 -m venv .venv
 . ./.venv/bin/activate
+```
+
+Step 3: Install dependencies
+
+```bash
 pip install -U pip
 pip install -e .
+```
+
+Step 4: Configure environment
+
+```bash
 cp .env.example .env
-python -m src.main run --strategies pairs,mm,leadlag
 ```
 
 Edit `.env` with your Alpaca paper credentials and preferred symbols/limits before running.
 Run commands use symbols from `.env` by default.
+Set `DISCORD_WEBHOOK_URL` to enable Discord alerts.
+
+Step 5: Run once in the foreground
+
+```bash
+python -m src.main run --strategies pairs,mm,leadlag
+```
+
+Step 6: Install and start the systemd service (runs without your SSH session)
+
+```bash
+sudo cp scripts/systemd/alpaca_hft_paper.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable alpaca_hft_paper.service
+sudo systemctl start alpaca_hft_paper.service
+```
+
+Step 7: Check status and logs
+
+```bash
+sudo systemctl status alpaca_hft_paper.service
+sudo journalctl -u alpaca_hft_paper.service -f
+```
+
+Step 8: Optional market-hours timers (start at 09:25 ET, stop at 16:05 ET)
+
+```bash
+sudo cp scripts/systemd/alpaca_hft_paper_start.service /etc/systemd/system/
+sudo cp scripts/systemd/alpaca_hft_paper_stop.service /etc/systemd/system/
+sudo cp scripts/systemd/alpaca_hft_paper_start.timer /etc/systemd/system/
+sudo cp scripts/systemd/alpaca_hft_paper_stop.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now alpaca_hft_paper_start.timer
+sudo systemctl enable --now alpaca_hft_paper_stop.timer
+```
 
 Optional uvloop:
 
@@ -24,9 +75,7 @@ Optional uvloop:
 pip install -e ".[uvloop]"
 ```
 
-## Configure
-
-Set `DISCORD_WEBHOOK_URL` to enable Discord alerts.
+## Runtime commands
 
 Status:
 
@@ -40,61 +89,14 @@ Flatten:
 python -m src.main flatten
 ```
 
-## Scripts
+Service management:
 
 ```bash
-bash scripts/run_paper.sh
-```
-
-Systemd example:
-
-`scripts/systemd/alpaca_hft_paper.service`
-
-Create and start the service (runs without your SSH session)
-
-```bash
-sudo cp scripts/systemd/alpaca_hft_paper.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable alpaca_hft_paper.service
-sudo systemctl start alpaca_hft_paper.service
-```
-
-Check service status:
-
-```bash
-sudo systemctl status alpaca_hft_paper.service
-```
-
-View logs:
-
-```bash
-sudo journalctl -u alpaca_hft_paper.service -f
-```
-
-Manage service:
-
-```bash
-sudo cp scripts/systemd/alpaca_hft_paper.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable alpaca_hft_paper.service
-sudo systemctl start alpaca_hft_paper.service
 sudo systemctl stop alpaca_hft_paper.service
 sudo systemctl restart alpaca_hft_paper.service
 sudo systemctl disable alpaca_hft_paper.service
 sudo rm /etc/systemd/system/alpaca_hft_paper.service
 sudo systemctl daemon-reload
-```
-
-Market-hours timers (start at 09:25 ET, stop at 16:05 ET):
-
-```bash
-sudo cp scripts/systemd/alpaca_hft_paper_start.service /etc/systemd/system/
-sudo cp scripts/systemd/alpaca_hft_paper_stop.service /etc/systemd/system/
-sudo cp scripts/systemd/alpaca_hft_paper_start.timer /etc/systemd/system/
-sudo cp scripts/systemd/alpaca_hft_paper_stop.timer /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now alpaca_hft_paper_start.timer
-sudo systemctl enable --now alpaca_hft_paper_stop.timer
 ```
 
 Note: The app already respects `TRADE_ONLY_REGULAR_HOURS=true` and will idle outside market hours even if the service stays running.
