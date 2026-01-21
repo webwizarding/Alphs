@@ -1,8 +1,6 @@
-# Alpaca HFT Paper Forward-Tester
+# Bur
 
-Forward-test multiple HFT-style strategy families on Alpaca paper trading using IEX data. Designed for a modest VPS with conservative defaults.
-
-## First-time setup on a VPS (Ubuntu 24.04)
+## Installation
 
 Step 1: Install prerequisites
 
