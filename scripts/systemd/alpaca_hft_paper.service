@@ -1,0 +1,14 @@
+[Unit]
+Description=Alpaca HFT Paper Trader
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/alpaca-hft-paper
+EnvironmentFile=/opt/alpaca-hft-paper/.env
+ExecStart=/opt/alpaca-hft-paper/.venv/bin/python -m src.main run --strategies pairs,mm,leadlag
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
