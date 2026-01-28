@@ -59,12 +59,13 @@ class SymbolState:
 
 
 class MarketDataStream:
-    def __init__(self, api_key: str, api_secret: str, symbols: List[str], feed: str = "iex", subscribe_bars: bool = True):
+    def __init__(self, api_key: str, api_secret: str, symbols: List[str], feed: str = "iex", subscribe_bars: bool = True, subscribe_trades: bool = True):
         self.api_key = api_key
         self.api_secret = api_secret
         self.symbols = symbols
         self.feed = feed
         self.subscribe_bars = subscribe_bars
+        self.subscribe_trades = subscribe_trades
         self.states: Dict[str, SymbolState] = {s: SymbolState(symbol=s) for s in symbols}
         self._stream = StockDataStream(api_key, api_secret, feed=DataFeed(feed))
         self._task: Optional[asyncio.Task] = None
@@ -73,7 +74,8 @@ class MarketDataStream:
     async def start(self) -> None:
         self._running = True
         self._stream.subscribe_quotes(self._on_quote, *self.symbols)
-        self._stream.subscribe_trades(self._on_trade, *self.symbols)
+        if self.subscribe_trades:
+            self._stream.subscribe_trades(self._on_trade, *self.symbols)
         if self.subscribe_bars:
             self._stream.subscribe_bars(self._on_bar, *self.symbols)
         self._task = asyncio.create_task(self._run_loop())

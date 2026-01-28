@@ -33,7 +33,7 @@ cp .env.example .env
 Edit `.env` with your Alpaca paper credentials and preferred symbols/limits before running.
 Run commands use symbols from `.env` by default.
 Set `DISCORD_WEBHOOK_URL` to enable Discord alerts.
-If you hit a symbol limit error, reduce `SYMBOLS`/`PAIRS`/`LEAD_LAG_SYMBOLS` or set `SUBSCRIBE_BARS=false`.
+If you hit a symbol limit error, reduce `SYMBOLS`/`PAIRS`/`LEAD_LAG_SYMBOLS` or set `SUBSCRIBE_BARS=false` and `SUBSCRIBE_TRADES=false`. You can also set `MAX_STREAM_SUBSCRIPTIONS` (default 30) to enforce a hard cap across quote/trade/bar channels.
 
 Step 5: Run once in the foreground
 

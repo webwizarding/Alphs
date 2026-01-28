@@ -112,12 +112,22 @@ async def run_trader(args: argparse.Namespace) -> None:
         strategies.append(MLOrderflow(cfg.symbols))
 
     stream_symbols = list(dict.fromkeys(cfg.symbols + [s for strat in strategies for s in strat.symbols]))
-    if cfg.max_stream_symbols > 0 and len(stream_symbols) > cfg.max_stream_symbols:
-        stream_symbols = stream_symbols[: cfg.max_stream_symbols]
-        metrics.log_event("symbol_cap", {"count": len(stream_symbols)})
-        await alerter.send("symbol_cap", f"stream symbols capped at {len(stream_symbols)}; reduce .env lists if needed")
+    channel_count = 1 + (1 if cfg.subscribe_trades else 0) + (1 if cfg.subscribe_bars else 0)
+    max_by_subs = cfg.max_stream_subscriptions // channel_count if cfg.max_stream_subscriptions > 0 else len(stream_symbols)
+    max_symbols = min(cfg.max_stream_symbols, max_by_subs) if cfg.max_stream_symbols > 0 else max_by_subs
+    if max_symbols > 0 and len(stream_symbols) > max_symbols:
+        stream_symbols = stream_symbols[:max_symbols]
+        metrics.log_event("symbol_cap", {"count": len(stream_symbols), "channels": channel_count})
+        await alerter.send("symbol_cap", f"stream symbols capped at {len(stream_symbols)} for {channel_count} channels; reduce .env lists if needed")
 
-    data_stream = MarketDataStream(cfg.api_key_id, cfg.api_secret_key, stream_symbols, feed=cfg.feed, subscribe_bars=cfg.subscribe_bars)
+    data_stream = MarketDataStream(
+        cfg.api_key_id,
+        cfg.api_secret_key,
+        stream_symbols,
+        feed=cfg.feed,
+        subscribe_bars=cfg.subscribe_bars,
+        subscribe_trades=cfg.subscribe_trades,
+    )
 
     async def tick() -> None:
         if cfg.session.trade_only_regular_hours:

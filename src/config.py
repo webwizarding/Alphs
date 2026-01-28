@@ -48,7 +48,9 @@ class AppConfig:
     tick_interval_sec: float = 1.0
     bars_timeframe: str = "1Min"
     subscribe_bars: bool = True
+    subscribe_trades: bool = True
     max_stream_symbols: int = 50
+    max_stream_subscriptions: int = 30
     log_dir: str = "logs"
     discord_webhook_url: str = ""
     risk: RiskConfig = field(default_factory=RiskConfig)
@@ -73,6 +75,21 @@ def env_list(name: str, default: str) -> List[str]:
     return [s.strip().upper() for s in raw.split(",") if s.strip()]
 
 
+def load_dotenv(path: str = ".env") -> None:
+    if not os.path.exists(path):
+        return
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            key = key.strip()
+            val = val.strip().strip("\"").strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = val
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="alpaca-hft")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -94,6 +111,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_config(args: argparse.Namespace) -> AppConfig:
+    load_dotenv()
     api_key_id = env_default("ALPACA_API_KEY_ID", "")
     api_secret_key = env_default("ALPACA_API_SECRET_KEY", "")
     if args.cmd == "run" and (not api_key_id or not api_secret_key):
@@ -143,11 +161,15 @@ def load_config(args: argparse.Namespace) -> AppConfig:
     if paper_rest.endswith("/v2"):
         paper_rest = paper_rest[:-3]
 
+    feed = env_default("FEED", "iex").lower()
+    if feed != "iex":
+        feed = "iex"
+
     cfg = AppConfig(
         api_key_id=api_key_id,
         api_secret_key=api_secret_key,
         paper_rest=paper_rest,
-        feed=env_default("FEED", "iex"),
+        feed=feed,
         symbols=symbols,
         pairs=pairs,
         leader_symbol=env_default("LEAD_LAG_LEADER", "SPY").upper(),
@@ -157,7 +179,9 @@ def load_config(args: argparse.Namespace) -> AppConfig:
         tick_interval_sec=tick_interval_sec,
         bars_timeframe=env_default("BARS_TIMEFRAME", "1Min"),
         subscribe_bars=env_bool("SUBSCRIBE_BARS", True),
+        subscribe_trades=env_bool("SUBSCRIBE_TRADES", True),
         max_stream_symbols=int(env_default("MAX_STREAM_SYMBOLS", "50")),
+        max_stream_subscriptions=int(env_default("MAX_STREAM_SUBSCRIPTIONS", "30")),
         log_dir=env_default("LOG_DIR", "logs"),
         discord_webhook_url=env_default("DISCORD_WEBHOOK_URL", ""),
         risk=RiskConfig(
