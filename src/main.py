@@ -31,7 +31,6 @@ async def run_trader(args: argparse.Namespace) -> None:
     cfg = load_config(args)
 
     broker = Broker(cfg.api_key_id, cfg.api_secret_key, max_per_min=cfg.risk.max_trades_per_min)
-    data_stream = MarketDataStream(cfg.api_key_id, cfg.api_secret_key, cfg.symbols, feed=cfg.feed)
     trade_stream = TradeStream(cfg.api_key_id, cfg.api_secret_key)
     execution = ExecutionEngine(broker, max_open_orders=cfg.risk.max_open_orders)
     risk = RiskManager(cfg.risk.max_gross_exposure_usd, cfg.risk.max_net_exposure_usd, cfg.risk.max_order_notional_usd, cfg.risk.max_position_notional_usd, cfg.risk.daily_loss_limit_usd)
@@ -111,6 +110,14 @@ async def run_trader(args: argparse.Namespace) -> None:
         strategies.append(news_strategy)
     if cfg.strategies.ml:
         strategies.append(MLOrderflow(cfg.symbols))
+
+    stream_symbols = list(dict.fromkeys(cfg.symbols + [s for strat in strategies for s in strat.symbols]))
+    if cfg.max_stream_symbols > 0 and len(stream_symbols) > cfg.max_stream_symbols:
+        stream_symbols = stream_symbols[: cfg.max_stream_symbols]
+        metrics.log_event("symbol_cap", {"count": len(stream_symbols)})
+        await alerter.send("symbol_cap", f"stream symbols capped at {len(stream_symbols)}; reduce .env lists if needed")
+
+    data_stream = MarketDataStream(cfg.api_key_id, cfg.api_secret_key, stream_symbols, feed=cfg.feed, subscribe_bars=cfg.subscribe_bars)
 
     async def tick() -> None:
         if cfg.session.trade_only_regular_hours:

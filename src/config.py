@@ -47,6 +47,8 @@ class AppConfig:
     etf_baskets: Dict[str, str] = field(default_factory=dict)
     tick_interval_sec: float = 1.0
     bars_timeframe: str = "1Min"
+    subscribe_bars: bool = True
+    max_stream_symbols: int = 50
     log_dir: str = "logs"
     discord_webhook_url: str = ""
     risk: RiskConfig = field(default_factory=RiskConfig)
@@ -154,6 +156,8 @@ def load_config(args: argparse.Namespace) -> AppConfig:
         etf_baskets=baskets,
         tick_interval_sec=tick_interval_sec,
         bars_timeframe=env_default("BARS_TIMEFRAME", "1Min"),
+        subscribe_bars=env_bool("SUBSCRIBE_BARS", True),
+        max_stream_symbols=int(env_default("MAX_STREAM_SYMBOLS", "50")),
         log_dir=env_default("LOG_DIR", "logs"),
         discord_webhook_url=env_default("DISCORD_WEBHOOK_URL", ""),
         risk=RiskConfig(
