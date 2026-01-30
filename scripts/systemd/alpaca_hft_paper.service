@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 WorkingDirectory=/home/Alphs
 EnvironmentFile=/home/Alphs/.env
-ExecStart=/home/Alphs/.venv/bin/python -m src.main run --strategies pairs,mm,leadlag
+ExecStart=/usr/bin/python3 -m src.main run --strategies pairs,mm,leadlag
 Restart=always
 RestartSec=5
 

@@ -7,4 +7,4 @@ if [ -f .env ]; then
   set +a
 fi
 
-python -m src.main run --strategies pairs,mm,leadlag --symbols "${SYMBOLS:-SPY,QQQ,AAPL,MSFT,NVDA}"
+/usr/bin/python3 -m src.main run --strategies pairs,mm,leadlag --symbols "${SYMBOLS:-SPY,QQQ,AAPL,MSFT,NVDA}"

@@ -1,30 +1,22 @@
-# Bur
+# Alpaca HFT Paper Forward-Tester
 
-## Installation
+## Installation (no venv)
 
 Step 1: Install prerequisites
 
 ```bash
 sudo apt update
-sudo apt install -y python3.12 python3.12-venv python3-pip
+sudo apt install -y python3 python3-pip
 ```
 
-Step 2: Create and activate a virtual environment
+Step 2: Install dependencies (system-wide)
 
 ```bash
-python3.12 -m venv .venv
-. ./.venv/bin/activate
-set -a; . ./.env; set +a
+sudo pip3 install -U pip
+sudo pip3 install -e /home/Alphs
 ```
 
-Step 3: Install dependencies
-
-```bash
-pip install -U pip
-pip install -e .
-```
-
-Step 4: Configure environment
+Step 3: Configure environment
 
 ```bash
 cp .env.example .env
@@ -35,13 +27,13 @@ Run commands use symbols from `.env` by default.
 Set `DISCORD_WEBHOOK_URL` to enable Discord alerts.
 If you hit a symbol limit error, reduce `SYMBOLS`/`PAIRS`/`LEAD_LAG_SYMBOLS` or set `SUBSCRIBE_BARS=false` and `SUBSCRIBE_TRADES=false`. You can also set `MAX_STREAM_SUBSCRIPTIONS` (default 30) to enforce a hard cap across quote/trade/bar channels.
 
-Step 5: Run once in the foreground
+Step 4: Run once in the foreground
 
 ```bash
-python -m src.main run --strategies pairs,mm,leadlag
+python3 -m src.main run --strategies pairs,mm,leadlag
 ```
 
-Step 6: Install and start the systemd service (runs without your SSH session)
+Step 5: Install and start the systemd service (runs without your SSH session)
 
 ```bash
 sudo cp scripts/systemd/alpaca_hft_paper.service /etc/systemd/system/
@@ -50,14 +42,14 @@ sudo systemctl enable alpaca_hft_paper.service
 sudo systemctl start alpaca_hft_paper.service
 ```
 
-Step 7: Check status and logs
+Step 6: Check status and logs
 
 ```bash
 sudo systemctl status alpaca_hft_paper.service
 sudo journalctl -u alpaca_hft_paper.service -f
 ```
 
-Step 8: Optional market-hours timers (start at 09:25 ET, stop at 16:05 ET)
+Step 7: Optional market-hours timers (start at 09:25 ET, stop at 16:05 ET)
 
 ```bash
 sudo cp scripts/systemd/alpaca_hft_paper_start.service /etc/systemd/system/
@@ -69,24 +61,18 @@ sudo systemctl enable --now alpaca_hft_paper_start.timer
 sudo systemctl enable --now alpaca_hft_paper_stop.timer
 ```
 
-Optional uvloop:
-
-```bash
-pip install -e ".[uvloop]"
-```
-
 ## Runtime commands
 
 Status:
 
 ```bash
-python -m src.main status
+python3 -m src.main status
 ```
 
 Flatten:
 
 ```bash
-python -m src.main flatten
+python3 -m src.main flatten
 ```
 
 Service management:
