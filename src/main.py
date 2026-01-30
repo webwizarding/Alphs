@@ -81,7 +81,7 @@ async def run_trader(args: argparse.Namespace) -> None:
             reject_counts[strategy] = reject_counts.get(strategy, 0) + 1
             if reject_counts[strategy] >= 5:
                 disabled_strats.add(strategy)
-                await alerter.send("strategy_disabled", f"{strategy} disabled after repeated rejects")
+                await alerter.send("Strategy disabled", f"{strategy} disabled after repeated rejects", color=0xFF5C5C)
         if event in {"fill", "partial_fill"}:
             symbol = order.get("symbol")
             side = order.get("side")
@@ -97,6 +97,15 @@ async def run_trader(args: argparse.Namespace) -> None:
             mid = st.mid if st else None
             if delta_qty > 0:
                 metrics.record_fill(strategy, symbol, delta_qty, price, side, mid=mid)
+                await alerter.send(
+                    "Trade execution",
+                    f"{symbol} {side} {delta_qty:.4g} @ {price:.4f}",
+                    fields=[
+                        {"name": "Strategy", "value": strategy, "inline": True},
+                        {"name": "Client ID", "value": client_id or "n/a", "inline": True},
+                    ],
+                    color=0x57F287,
+                )
         await execution.on_trade_update(update)
 
     trade_stream.add_handler(handle_trade_update)
@@ -135,11 +144,21 @@ async def run_trader(args: argparse.Namespace) -> None:
         subscribe_trades=cfg.subscribe_trades,
     )
 
+    last_regular = False
+    last_account_snapshot = None
+
     async def tick() -> None:
+        nonlocal last_regular
         if cfg.session.trade_only_regular_hours:
             ts = now_eastern()
             if not is_regular_hours(ts):
+                if last_regular:
+                    await send_account_summary("Market closed")
+                last_regular = False
                 return
+            if not last_regular:
+                await send_account_summary("Market open")
+                last_regular = True
             if seconds_to_close(ts) < cfg.session.flatten_before_close_minutes * 60:
                 await flatten_all()
                 return
@@ -161,7 +180,7 @@ async def run_trader(args: argparse.Namespace) -> None:
             intents.extend(strat.on_tick(data_stream, positions))
         intents = risk.check(intents, positions, data_stream)
         if risk.kill_switch:
-            await alerter.send("kill_switch", "daily loss limit reached, flattening positions")
+            await alerter.send("Kill switch", "daily loss limit reached, flattening positions", color=0xFF5C5C)
             await flatten_all()
             return
         await execution.sync(intents)
@@ -171,7 +190,7 @@ async def run_trader(args: argparse.Namespace) -> None:
             await tick()
         except Exception as e:
             metrics.log_event("tick_error", {"error": str(e)})
-            await alerter.send("tick_error", str(e)[:180])
+            await alerter.send("Tick error", str(e)[:180], color=0xFF5C5C)
 
     async def flatten_all() -> None:
         await refresh_positions(force=True)
@@ -185,9 +204,37 @@ async def run_trader(args: argparse.Namespace) -> None:
             intents.append(OrderIntent(symbol=sym, side=side, qty=abs(pos.qty), limit_price=price, tif=TimeInForce.DAY, strategy="flatten", intent_id=f"{sym}-flat", order_type="market"))
         await execution.sync(intents)
 
+    async def send_account_summary(title: str) -> None:
+        nonlocal last_account_snapshot
+        try:
+            acct = await broker.get_account()
+            snapshot = {
+                "equity": str(acct.equity),
+                "cash": str(acct.cash),
+                "buying_power": str(acct.buying_power),
+                "daytrade_count": str(acct.daytrade_count),
+            }
+            if snapshot == last_account_snapshot and title != "Startup":
+                return
+            last_account_snapshot = snapshot
+            await alerter.send(
+                title,
+                "Account summary",
+                fields=[
+                    {"name": "Equity", "value": snapshot["equity"], "inline": True},
+                    {"name": "Cash", "value": snapshot["cash"], "inline": True},
+                    {"name": "Buying Power", "value": snapshot["buying_power"], "inline": True},
+                    {"name": "Day Trades", "value": snapshot["daytrade_count"], "inline": True},
+                ],
+                color=0x5865F2,
+            )
+        except Exception as e:
+            metrics.log_event("account_summary_error", {"error": str(e)})
+
     await data_stream.start()
     await trade_stream.start()
-    await alerter.send("startup", "trader started")
+    await alerter.send("Startup", "Trader started", color=0x5865F2)
+    await send_account_summary("Startup")
     if news_strategy:
         try:
             from alpaca.data.live import NewsDataStream
@@ -204,7 +251,7 @@ async def run_trader(args: argparse.Namespace) -> None:
             asyncio.create_task(asyncio.to_thread(news_stream.run))
         except Exception:
             metrics.log_event("news_stream", {"status": "unavailable"})
-            await alerter.send("news_stream", "news stream unavailable")
+            await alerter.send("News stream", "news stream unavailable", color=0xFF5C5C)
 
     scheduler = AsyncScheduler(cfg.tick_interval_sec)
     loop = asyncio.get_running_loop()
