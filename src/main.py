@@ -49,18 +49,24 @@ async def run_trader(args: argparse.Namespace) -> None:
         now = time.time()
         if not force and now - last_pos_ts < 10:
             return
-        pos_list = await broker.list_positions()
-        positions = {p.symbol: PositionState(symbol=p.symbol, qty=float(p.qty), avg_price=float(p.avg_entry_price)) for p in pos_list}
-        last_pos_ts = now
+        try:
+            pos_list = await broker.list_positions()
+            positions = {p.symbol: PositionState(symbol=p.symbol, qty=float(p.qty), avg_price=float(p.avg_entry_price)) for p in pos_list}
+            last_pos_ts = now
+        except Exception as e:
+            metrics.log_event("positions_error", {"error": str(e)})
 
     async def refresh_account() -> None:
         nonlocal last_acct_ts
         now = time.time()
         if now - last_acct_ts < 10:
             return
-        acct = await broker.get_account()
-        risk.update_account(float(acct.equity))
-        last_acct_ts = now
+        try:
+            acct = await broker.get_account()
+            risk.update_account(float(acct.equity))
+            last_acct_ts = now
+        except Exception as e:
+            metrics.log_event("account_error", {"error": str(e)})
 
     disabled_strats = set()
     reject_counts: Dict[str, int] = {}
@@ -160,6 +166,13 @@ async def run_trader(args: argparse.Namespace) -> None:
             return
         await execution.sync(intents)
 
+    async def tick_safe() -> None:
+        try:
+            await tick()
+        except Exception as e:
+            metrics.log_event("tick_error", {"error": str(e)})
+            await alerter.send("tick_error", str(e)[:180])
+
     async def flatten_all() -> None:
         await refresh_positions(force=True)
         intents: List[OrderIntent] = []
@@ -203,7 +216,7 @@ async def run_trader(args: argparse.Namespace) -> None:
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, _stop)
 
-    tick_task = asyncio.create_task(scheduler.start(tick))
+    tick_task = asyncio.create_task(scheduler.start(tick_safe))
     await stop_event.wait()
     scheduler.stop()
     await tick_task
