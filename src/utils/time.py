@@ -1,8 +1,8 @@
 from __future__ import annotations
 import datetime as dt
-import pytz
+from zoneinfo import ZoneInfo
 
-EASTERN = pytz.timezone("US/Eastern")
+EASTERN = ZoneInfo("America/New_York")
 
 
 def now_utc() -> dt.datetime:
