@@ -67,7 +67,8 @@ class MarketDataStream:
         self.subscribe_bars = subscribe_bars
         self.subscribe_trades = subscribe_trades
         self.states: Dict[str, SymbolState] = {s: SymbolState(symbol=s) for s in symbols}
-        self._stream = StockDataStream(api_key, api_secret, feed=DataFeed(feed))
+        feed_enum = DataFeed.IEX if str(feed).lower() == "iex" else DataFeed.IEX
+        self._stream = StockDataStream(api_key, api_secret, feed=feed_enum)
         self._task: Optional[asyncio.Task] = None
         self._running = False
 

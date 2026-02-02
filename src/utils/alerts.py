@@ -34,6 +34,6 @@ class DiscordAlerter:
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(self.webhook_url, data=data, headers={"Content-Type": "application/json"})
         try:
-            await asyncio.to_thread(urllib.request.urlopen, req)
+            await asyncio.to_thread(urllib.request.urlopen, req, 5)
         except Exception:
             self._disabled = True
